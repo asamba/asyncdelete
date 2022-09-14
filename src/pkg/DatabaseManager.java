@@ -44,10 +44,7 @@ public class DatabaseManager {
                 //System.out.println("DB Output id: " + id + " Name: " + name);
 
                 CompletableFuture<String> completableFuture = databaseDeleteManager.delete(id);
-                System.out.println("Adding the completableFutureList " + id);
                 boolean added = completableFutureList.add(completableFuture);
-                System.out.println("added = " + added + " for id " + id);
-
             }
         } catch (Exception e) {
             e.printStackTrace();
