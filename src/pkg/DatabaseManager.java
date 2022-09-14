@@ -18,6 +18,7 @@ public class DatabaseManager {
     static final String PASS = "";
 
      List<CompletableFuture<String>> completableFutureList = new ArrayList<>();
+    DatabaseDeleteManager databaseDeleteManager = new DatabaseDeleteManager();
 
     public void fetchIds() throws  Exception{
 
@@ -41,10 +42,6 @@ public class DatabaseManager {
                 String id = Integer.toString(rs.getInt("ID"));
                 String name = rs.getString("NAME"); // Assuming there is a column called name.
                 //System.out.println("DB Output id: " + id + " Name: " + name);
-
-                ResultSetGenerator resultSetGenerator = new ResultSetGenerator();
-                List<String> idsToDelete = resultSetGenerator.generate();
-                DatabaseDeleteManager databaseDeleteManager = new DatabaseDeleteManager();
 
                 CompletableFuture<String> completableFuture = databaseDeleteManager.delete(id);
                 System.out.println("Adding the completableFutureList " + id);
