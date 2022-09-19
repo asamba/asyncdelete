@@ -5,21 +5,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class DatabaseDeleteManager {
+    public String delete(String id) {
 
-    public CompletableFuture<String> delete(String id) {
+        String success = "FALSE";
 
-        ExecutorService yourOwnExecutor = Executors.newFixedThreadPool(2);
-
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                System.out.println("Deleting : id = " + id);
-                Thread.sleep(10000);
-                System.out.println("***Deleted*** : id = " + id);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            return "RETURN ----- Deleted: " + id;
-        }, yourOwnExecutor);
+        try {
+            System.out.println("***DatabaseDeleteManager STARTING TO DELETE *** : id = " + id);
+            Thread.sleep(3000);
+            System.out.println("***DatabaseDeleteManager Deleted*** : id = " + id);
+            success = "TRUE";
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return success;
     }
-
 }

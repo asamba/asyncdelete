@@ -7,6 +7,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class DatabaseManager {
@@ -17,43 +19,68 @@ public class DatabaseManager {
     static final String USER = "sa";
     static final String PASS = "";
 
-     List<CompletableFuture<String>> completableFutureList = new ArrayList<>();
+    static final int CONCURRENT_PROCESSING_LIMIT = 1;
+
     DatabaseDeleteManager databaseDeleteManager = new DatabaseDeleteManager();
 
-    public void fetchIds() throws  Exception{
+    public void deleteIds() throws  Exception{
 
         long startTime = System.currentTimeMillis();
 
         Connection conn = null;
         Statement stmt = null;
         try {
-            // STEP 1: Register JDBC driver
             Class.forName(JDBC_DRIVER);
-
-            // STEP 2: Open a connection
-            System.out.println("Connecting to a selected database...");
             conn = DriverManager.getConnection(DB_URL, USER, PASS);
-            System.out.println("Connected database successfully...");
 
             Statement statement = conn.createStatement();
             ResultSet rs = statement.executeQuery("SELECT * FROM TEST");
 
+            List<String> deletableIds = new ArrayList<>(CONCURRENT_PROCESSING_LIMIT);
+
+            int currentParallelCount = 0;
             while (rs.next()) {
                 String id = Integer.toString(rs.getInt("ID"));
                 String name = rs.getString("NAME"); // Assuming there is a column called name.
-                //System.out.println("DB Output id: " + id + " Name: " + name);
 
-                CompletableFuture<String> completableFuture = databaseDeleteManager.delete(id);
-                boolean added = completableFutureList.add(completableFuture);
+                if(currentParallelCount < CONCURRENT_PROCESSING_LIMIT) {
+                    System.out.println("adding to the deletableIds = " + id);
+                    deletableIds.add(id);
+                    currentParallelCount++;
+                }
+                if(currentParallelCount == CONCURRENT_PROCESSING_LIMIT || rs.isLast()) {
+                    System.out.println("inside the PARALLEL PRocessing count " + currentParallelCount);
+                    currentParallelCount = 0;
+                    System.out.println("deletableIds = " + deletableIds.toString());
+                    executeDeleteConcurrently(deletableIds);
+                    // reset the list
+                    deletableIds = new ArrayList<>(CONCURRENT_PROCESSING_LIMIT);
+                    System.out.println("========================= EXECUTE CONCURRENTLY CALLED=================================");
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        long endTime = System.currentTimeMillis();
+        System.out.println("Duration: " + (endTime - startTime)/1000 + " secs");
+    }
 
-        System.out.println("******************** Before CompletableFuture ********************");
+    private void executeDeleteConcurrently(List<String> deletableIds) throws  Exception{
+
+        List<CompletableFuture<String>> completableFutureList = new ArrayList<>();
+        ExecutorService deleteParallelizedExecutor = Executors.newFixedThreadPool(CONCURRENT_PROCESSING_LIMIT);
+
+        for (String id : deletableIds) {
+
+            CompletableFuture<String> completableFuture = CompletableFuture.supplyAsync(() -> databaseDeleteManager.delete(id), deleteParallelizedExecutor);
+            completableFutureList.add(completableFuture);
+        }
         //wait for all completion
         CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[0]))
-                .exceptionally(ex -> null)
+                .exceptionally(ex -> {
+                    System.out.println("Did not delete id" + ex.getMessage());
+                    return  null;
+                })
                 .join();
 
         //Map<Boolean, List<CompletableFuture<String>>> collect = completableFutureList.stream().collect(Collectors.partitioningBy(CompletableFuture::isCompletedExceptionally));
@@ -64,10 +91,6 @@ public class DatabaseManager {
             String deletedId = item.get();
             System.out.println("result = " + deletedId);
         }
-
-        long endTime = System.currentTimeMillis();
-        System.out.println("Duration: " + (endTime - startTime)/1000 + " secs");
-
-
     }
+
 }
