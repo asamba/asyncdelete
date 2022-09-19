@@ -19,7 +19,7 @@ public class DatabaseManager {
     static final String USER = "sa";
     static final String PASS = "";
 
-    static final int CONCURRENT_PROCESSING_LIMIT = 1;
+    static final int CONCURRENT_PROCESSING_LIMIT = 2;
 
     DatabaseDeleteManager databaseDeleteManager = new DatabaseDeleteManager();
 
@@ -44,18 +44,13 @@ public class DatabaseManager {
                 String name = rs.getString("NAME"); // Assuming there is a column called name.
 
                 if(currentParallelCount < CONCURRENT_PROCESSING_LIMIT) {
-                    System.out.println("adding to the deletableIds = " + id);
                     deletableIds.add(id);
                     currentParallelCount++;
                 }
                 if(currentParallelCount == CONCURRENT_PROCESSING_LIMIT || rs.isLast()) {
-                    System.out.println("inside the PARALLEL PRocessing count " + currentParallelCount);
                     currentParallelCount = 0;
-                    System.out.println("deletableIds = " + deletableIds.toString());
                     executeDeleteConcurrently(deletableIds);
-                    // reset the list
                     deletableIds = new ArrayList<>(CONCURRENT_PROCESSING_LIMIT);
-                    System.out.println("========================= EXECUTE CONCURRENTLY CALLED=================================");
                 }
             }
         } catch (Exception e) {

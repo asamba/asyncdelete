@@ -6,17 +6,15 @@ import java.util.concurrent.Executors;
 
 public class DatabaseDeleteManager {
     public String delete(String id) {
-
-        String success = "FALSE";
-
         try {
             System.out.println("***DatabaseDeleteManager STARTING TO DELETE *** : id = " + id);
             Thread.sleep(3000);
             System.out.println("***DatabaseDeleteManager Deleted*** : id = " + id);
-            success = "TRUE";
         } catch (InterruptedException e) {
+            System.out.println("Could not delete Id " + id);
             throw new RuntimeException(e);
         }
-        return success;
+
+        return "successfuly deleted " + id;
     }
 }
