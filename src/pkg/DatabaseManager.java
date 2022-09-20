@@ -88,4 +88,11 @@ public class DatabaseManager {
         }
     }
 
+    private void executeDeleteConcurrently2(List<String> deletableIds) {
+        var futures = deletableIds.stream().map(databaseDeleteManager::delete2).toArray(CompletableFuture[]::new);
+        CompletableFuture
+                .allOf(futures)
+                .join();
+    }
+
 }
